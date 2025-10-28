@@ -4,130 +4,154 @@ use IEEE.numeric_std.all;
 
 use work.Tipos_Elevadores.all;
 
-entity Controlador is               -- 80% disso foi gpt, não confio (estava sem tempo e fiz isso para ter uma base :p )
+-- Controlador: máquina de estados que controla um elevador individualmente
+
+entity Controlador is
     port (
         CLK             : in  std_logic;
         RESET           : in  std_logic;
         
-        -- INs do Sistema / Supervisor
-        andar_atual_in  : in  std_logic_vector(4 downto 0);      -- LIDO do sensor de andar
-        andar_destino_in: in  std_logic_vector(4 downto 0);      -- ESCOLHIDO pelo Supervisor_Global/Unico
-        direcao_req_in  : in  std_logic;                         -- DIREÇÃO ESCOLHIDA pelo Supervisor
-        door_closed_in  : in  std_logic;                         -- LIDO do módulo 'porta.vhd'
+        -- Entradas do Sistema / Supervisor
+        andar_atual_in  : in  std_logic_vector(4 downto 0);      -- andar lido do sensor (0..31)
+        andar_destino_in: in  std_logic_vector(4 downto 0);      -- destino recebido do supervisor
+        direcao_req_in  : in  std_logic;                         -- direcao pedida pelo supervisor ('1' = subir)
+        door_closed_in  : in  std_logic;                         -- status da porta (porta fechada)
+        door_open_in    : in  std_logic;                         -- status da porta (porta aberta)
+
+        -- Botões especiais (abrir/fechar) vindos do teclado local
+        botao_abrir_in  : in std_logic;
+        botao_fechar_in : in std_logic;
         
-        -- IN/OUT do Teclado (Para LIMPAR chamadas internas)
-        botoes_pendentes_in  : in  std_logic_vector(31 downto 0); -- LIDO do 'keyboard.vhd'
-        botoes_pendentes_out : out std_logic_vector(31 downto 0); -- ENVIADO de volta ao 'keyboard.vhd'
+        -- Interface com o teclado: pedidos internos pendentes (entrada) e pedidos "limpos" (saída)
+        botoes_pendentes_in  : in  std_logic_vector(ULTIMO_ANDAR downto 0); -- vet. pedidos atuais (keyboard -> controlador)
+        botoes_pendentes_out : out std_logic_vector(ULTIMO_ANDAR downto 0); -- vet. atualizado (controlador -> keyboard)
         
-        -- OUTs para o Hardware (Porta e Motor)
-        start_close_out : out std_logic;                         -- ENVIADO para 'porta.vhd'
-        motor_enable_out: out std_logic;                         -- LIGAR/DESLIGAR motor
-        move_up_out     : out std_logic;                         -- SENTIDO para motor (Subir)
-        move_down_out   : out std_logic                          -- SENTIDO para motor (Descer)
+        -- Saídas de controle para hardware (porta e motor)
+        start_close_out : out std_logic;    -- iniciar fechamento de porta
+        start_open_out  : out std_logic;    -- iniciar abertura da porta
+        motor_enable_out: out std_logic;    -- habilitar motor (1 = motor ligado)
+        move_up_out     : out std_logic;    -- comando de direção: subir
+        move_down_out   : out std_logic     -- comando de direção: descer
     );
-    end Controlador;
-    architecture Behavioral of Controlador is
-    -- Definição dos estados da FSM
+end Controlador;
+
+architecture Behavioral of Controlador is
+
+    -- Estado atual e próximo estado da FSM (definidos em Tipos_Elevadores)
     signal estado_atual, proximo_estado : t_estado;
     
-    -- Sinais auxiliares para limpar o botão
-    signal botoes_temp : std_logic_vector(31 downto 0);
-
-begin
+    -- Registro do vetor de botões pendentes (botoes_reg) e próximo valor (botoes_next)
+    -- Padrão "reg/next" evita múltiplos drivers e é adequado para síntese.
+    signal botoes_reg  : std_logic_vector(ULTIMO_ANDAR downto 0);
+    signal botoes_next : std_logic_vector(ULTIMO_ANDAR downto 0);
     
-    -- ---------------------------------------
-    -- Processo 1: Máquina de Estados (Registrador de Estado)
-    -- ---------------------------------------
+begin
+
+
+    -- - On RESET: inicializa estado e limpa pedidos
+    -- - On rising_edge(CLK): atualiza estado e botoes_reg <- botoes_next
     process (CLK, RESET) is
     begin
         if RESET = '1' then
-            estado_atual <= IDLE;
-            botoes_temp  <= (others => '0');
+            estado_atual <= IDLE;             -- estado inicial
+            botoes_reg   <= (others => '0');  -- limpa todos os pedidos
         elsif rising_edge(CLK) then
-            estado_atual <= proximo_estado;
-            botoes_temp  <= botoes_pendentes_in;
+            estado_atual <= proximo_estado;   -- atualiza o estado (registro)
+            botoes_reg   <= botoes_next;      -- atualiza o vetor de pedidos (registro)
         end if;
     end process;
     
-    botoes_pendentes_out <= botoes_temp; -- Passa os pedidos para o teclado, exceto quando limpa
+    -- Saída para o teclado: vetor de pedidos pendentes é a cópia registrada
+    -- (o teclado lê esse vetor para mostrar/armazenar o estado atual dos botões)
+    botoes_pendentes_out <= botoes_reg;
 
-    -- ---------------------------------------
-    -- Processo 2: Lógica Combinacional (Próximo Estado e Saídas)
-    -- ---------------------------------------
-    process (estado_atual, andar_atual_in, andar_destino_in, direcao_req_in, door_closed_in, botoes_pendentes_in, botoes_temp) is
-        -- Conversão para Integer, pois é mais fácil de comparar
+    -- - Calcula proximo_estado e sinais de controle com base no estado atual e entradas
+    -- - Usa variáveis locais para conversões numéricas (atual_int, destino_int)
+    -- - Atualiza botoes_next a partir de var_botoes (copia de botoes_pendentes_in)
+    process (estado_atual, andar_atual_in, andar_destino_in, direcao_req_in,
+             door_closed_in, door_open_in, botoes_pendentes_in, botoes_reg,
+             botao_abrir_in, botao_fechar_in) is
+        -- Variáveis auxiliares para comparações inteiras
         variable atual_int    : integer;
         variable destino_int  : integer;
+        -- var_botoes é usado para modificar localmente o vetor de pedidos antes de gravá-lo em botoes_next
+        variable var_botoes   : std_logic_vector(ULTIMO_ANDAR downto 0);
     begin
-        -- Default: Nenhuma ação
-        proximo_estado   <= estado_atual;
-        motor_enable_out <= '0';
-        move_up_out      <= '0';
+        -- Valores default para evitar latches e garantir comportamento determinístico
+        proximo_estado   <= estado_atual;  -- por padrão permanece no mesmo estado
+        motor_enable_out <= '0';           -- motor desligado por padrão
+        move_up_out      <= '0';           -- sem direção por padrão
         move_down_out    <= '0';
-        start_close_out  <= '0';
+        start_close_out  <= '0';           -- não iniciar fechamento por padrão
+        start_open_out   <= '0';           -- não iniciar abertura por padrão
 
+        -- Converte vetores binários para inteiros para facilitar comparações
         atual_int   := to_integer(unsigned(andar_atual_in));
         destino_int := to_integer(unsigned(andar_destino_in));
-        
+
+        -- Inicializa var_botoes com os pedidos vindos do teclado (novos pedidos entram)
+        var_botoes := botoes_pendentes_in;
+        -- Define botoes_next como padrão para os pedidos atuais (pode ser alterado abaixo)
+        botoes_next <= botoes_pendentes_in;
+
+        -- FSM: lógica por estado
         case estado_atual is
-            
+
             when IDLE =>
-                -- O elevador está no andar de destino ou sem destino
-                if atual_int /= destino_int then
-                    -- Há um novo destino. Inicia o fechamento da porta.
+                -- Se o elevador não está no destino ou se usuário pediu fechar porta,
+                -- inicia procedimento de fechamento (preparar para mover)
+                if (atual_int /= destino_int) or (botao_fechar_in = '1') then
                     proximo_estado <= FECHANDO_PORTA;
-                    
-                else 
-                    -- Não há novo destino ou já chegou. Fica em IDLE.
-                    -- (Assumindo que em IDLE a porta pode estar aberta ou fechada)
-                    proximo_estado <= IDLE;
+                else
+                    proximo_estado <= IDLE; -- permanece em idle
                 end if;
-                
+
             when FECHANDO_PORTA =>
-                start_close_out <= '1'; -- Sinaliza para a porta iniciar o fechamento
-                
-                if door_closed_in = '1' then
-                    -- Porta fechou completamente (após 2s, de acordo com porta.vhd)
+                -- Solicita fechamento da porta
+                start_close_out <= '1';
+                -- Se usuário apertar abrir durante o fechamento, aborta e abre
+                if botao_abrir_in = '1' then
+                    proximo_estado <= ABRINDO_PORTA;
+                -- Se porta reportar que já está fechada, pode iniciar movimento
+                elsif door_closed_in = '1' then
                     proximo_estado <= MOVER;
                 end if;
 
             when MOVER =>
+                -- Se ainda não chegou ao destino, liga motor e define direção
                 if atual_int /= destino_int then
-                    motor_enable_out <= '1'; -- Liga o motor
-                    
-                    -- Define a direção do movimento
-                    if direcao_req_in = '1' then -- Subir
+                    motor_enable_out <= '1';
+                    if direcao_req_in = '1' then
                         move_up_out <= '1';
-                    else                         -- Descer
+                    else
                         move_down_out <= '1';
                     end if;
-                    
                 else
-                    -- Chegou ao destino
+                    -- Chegou ao andar desejado: transita para rotina de chegada
                     proximo_estado <= CHEGOU_ANDAR;
                 end if;
-                
+
             when CHEGOU_ANDAR =>
-                -- Para o motor (garantia, mesmo que já estivesse parado)
+                -- Garante que motor esteja desligado ao chegar
                 motor_enable_out <= '0';
-                
-                -- Limpa o botão que foi atendido (AQUI ESTÁ A CHAVE)
-                if botoes_pendentes_in(atual_int) = '1' then
-                    -- Mantém todos os outros bits, exceto o do andar atual
-                    botoes_temp(atual_int) <= '0';
+                -- Limpa o pedido do andar atual no vetor local var_botoes, para depois atualizar botoes_next
+                if botoes_reg(atual_int) = '1' then
+                    var_botoes(atual_int) := '0';
                 end if;
-                
-                -- Após limpar o pedido, a próxima ação é abrir a porta
+                -- Em seguida, abrir porta para embarque/desembarque
                 proximo_estado <= ABRINDO_PORTA;
-                
+
             when ABRINDO_PORTA =>
-                -- Nenhuma ação é necessária aqui. A porta permanece aberta (estado ABERTA em porta.vhd)
-                
-                -- Transição para o IDLE para aguardar novo destino ou fechamento de porta
-                -- Para que o controlador não fique parado, volta para IDLE para verificar se há um novo destino.
-                proximo_estado <= IDLE; 
-                
+                -- Comanda abertura da porta
+                start_open_out <= '1';
+                -- Aguarda sinal indicativo de porta aberta para voltar ao IDLE
+                if door_open_in = '1' then
+                    proximo_estado <= IDLE;
+                end if;
+
         end case;
+
+        -- Ao final do processo combinacional, botoes_next é atualizado com var_botoes
+        botoes_next <= var_botoes;
     end process;
 end architecture Behavioral;
-

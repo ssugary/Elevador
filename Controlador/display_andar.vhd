@@ -4,9 +4,9 @@ use IEEE.numeric_std.all;  -- Necessário para unsigned/integer/conversion
 
 entity Led_7Segmentos_Andar is
     Port (
-        entrada : in  std_logic_vector(4 downto 0); -- Vetor de entrada do andar atual (em bits)
+        entrada            : in  std_logic_vector(4 downto 0); -- Vetor de entrada do andar atual (em bits)
                                                     -- Talvez seja até melhor colocar como entrada o número em inteiro mesmo mas eu não sei se pode fazer isso pois não manjo de VHDL
-        segmentos_dezenas : out std_logic_vector(6 downto 0); -- Saída do primero led (Dezenas)
+        segmentos_dezenas  : out std_logic_vector(6 downto 0); -- Saída do primero led (Dezenas)
         segmentos_unidades : out std_logic_vector(6 downto 0)  -- Saída do segundo led (Unidades)
     );
 end entity Led_7Segmentos_Andar;
@@ -14,8 +14,8 @@ end entity Led_7Segmentos_Andar;
 architecture Behavioral of Led_7Segmentos_Andar is
 
     -- Declaração de sinais inteiros. Vamos transformar os bits em decimais.
-    signal valor_decimal : integer range 0 to 31; 
-    signal digito_dezenas : integer range 0 to 3; 
+    signal valor_decimal   : integer range 0 to 31; 
+    signal digito_dezenas  : integer range 0 to 3; 
     signal digito_unidades : integer range 0 to 9;
                                                     
 begin
