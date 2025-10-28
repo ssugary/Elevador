@@ -29,7 +29,7 @@ entity Teclado is
                 abrir_porta_out <= '0';
                 estado_motor_out <= '0';
             elsif rising_edge(CLK) then
-                andares_out <= andares_in or botoes_in; -- adiciona novos pedidos sem alterar os pendentesab
+                andares_out <= andares_in or botoes_in; -- adiciona novos pedidos sem alterar os pendentes
 
                 abrir_porta_out <= botao_abrir_in;      --
                 fechar_porta_out <= botao_fechar_in;    -- Repassam a informação do botão apertado para o controlador
