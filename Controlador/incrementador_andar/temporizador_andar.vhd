@@ -47,7 +47,7 @@ begin
                         state <= MOVING;
                     end if;
 
-                when DELAYING =>
+                when MOVING =>
                     if is_closed = '0' then
                         state <= IDLE;
 
@@ -60,7 +60,7 @@ begin
                         state <= MOVED;
                     end if;
 
-                when INCREMENTED =>
+                when MOVED =>
                     if is_closed = '0' then
                         state <= IDLE;
                     end if;

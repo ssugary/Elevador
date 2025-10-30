@@ -8,7 +8,7 @@ entity incrementer is
     );
     port (
         data_in  : in  std_logic_vector(N - 1 downto 0);
-        data_out : out std_logic_vector(N - 1 downto 0);
+        data_out : out std_logic_vector(N - 1 downto 0)
     );
 end entity incrementer;
 
