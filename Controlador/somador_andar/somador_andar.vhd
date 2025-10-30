@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity somador_andar is
     generic (
-        N_BITS : integer := 4
+        N_BITS : integer := 4;
         G_MAX_COUNT : integer := 100_000_000
     );
     port (
@@ -19,7 +19,7 @@ end entity somador_andar;
 
 architecture behavioral of somador_andar is
 
-    constant MAX_COUNT   : integer := G_MAX_COUNT
+    constant MAX_COUNT   : integer := G_MAX_COUNT;
 
     signal delay_counter : integer range 0 to MAX_COUNT;
 
