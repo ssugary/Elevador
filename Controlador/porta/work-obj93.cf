@@ -1,0 +1,7 @@
+v 4
+file . "tb_porta.vhd" "5fbd198aea020b7c0ff2b7a7bae5edc6dcb3bbe8" "20251101131916.101":
+  entity tb_porta_elevador at 1( 0) + 0 on 13;
+  architecture testbench of tb_porta_elevador at 7( 103) + 0 on 14;
+file . "porta.vhd" "25c3092c8094dd95dd674ce85d93690b7c4f5f3e" "20251101131913.790":
+  entity porta at 1( 0) + 0 on 11;
+  architecture fsm_com_timer of porta at 24( 501) + 0 on 12;
