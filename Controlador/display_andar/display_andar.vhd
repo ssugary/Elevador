@@ -14,9 +14,9 @@ end entity Led_7Segmentos_Andar;
 architecture Behavioral of Led_7Segmentos_Andar is
 
     -- Declaração de sinais inteiros. Vamos transformar os bits em decimais.
-    signal valor_decimal   : integer range 0 to 31; 
-    signal digito_dezenas  : integer range 0 to 3; 
-    signal digito_unidades : integer range 0 to 9;
+    signal valor_decimal   : integer range 0 to 31 := 0; 
+    signal digito_dezenas  : integer range 0 to 3  := 0; 
+    signal digito_unidades : integer range 0 to 9  := 0;
                                                     
 begin
 

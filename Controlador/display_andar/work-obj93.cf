@@ -1,7 +1,0 @@
-v 4
-file . "tb_display_andar.vhd" "c8248304d33317d712dadf2e0a834ec61730d2db" "20251030215959.347":
-  entity led_7segmentos_andar_tb at 1( 0) + 0 on 13;
-  architecture teste of led_7segmentos_andar_tb at 9( 288) + 0 on 14;
-file . "display_andar.vhd" "485e1838575c79443ca6c1f84b9ae8739e8c94f1" "20251030215949.281":
-  entity led_7segmentos_andar at 1( 0) + 0 on 11;
-  architecture behavioral of led_7segmentos_andar at 14( 706) + 0 on 12;

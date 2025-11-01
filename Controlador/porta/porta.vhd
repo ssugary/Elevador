@@ -26,8 +26,8 @@ architecture fsm_com_timer of porta is
 
     -- Estados da FSM
     type t_estado is (ABRINDO, ABERTA, FECHANDO, FECHADA);
-    signal estado_atual, proximo_estado : t_estado;
-    signal timer_count : integer range 0 to MAX_COUNT; 
+    signal estado_atual, proximo_estado : t_estado := ABERTA;
+    signal timer_count : integer range 0 to MAX_COUNT := 0; 
 
 begin
     process (clk, reset)

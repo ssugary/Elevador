@@ -17,8 +17,8 @@ architecture Teste of Led_7Segmentos_Andar_tb is
 
     -- Sinais para conectar no componente
     signal tb_entrada            : std_logic_vector(4 downto 0) := (others => '0'); -- Inicializado em 0
-    signal tb_segmentos_dezenas  : std_logic_vector(6 downto 0);
-    signal tb_segmentos_unidades : std_logic_vector(6 downto 0);
+    signal tb_segmentos_dezenas  : std_logic_vector(6 downto 0) := (others => '0');
+    signal tb_segmentos_unidades : std_logic_vector(6 downto 0) := (others => '0');
 
     
     constant C_TEMPO_TESTE : time := 10 ns; --Clock para delay de teste
