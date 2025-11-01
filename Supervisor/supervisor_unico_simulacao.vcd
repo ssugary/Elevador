@@ -1,0 +1,95 @@
+$date
+  Sat Nov 01 13:50:35 2025
+$end
+$version
+  GHDL v0
+$end
+$timescale
+  1 fs
+$end
+$scope module standard $end
+$upscope $end
+$scope module std_logic_1164 $end
+$upscope $end
+$scope module numeric_std $end
+$upscope $end
+$scope module tipos_elevadores $end
+$upscope $end
+$scope module tb_supervisor_unico $end
+$var reg 32 ! s_botoes_in[31:0] $end
+$var reg 5 " s_andaratual_in[4:0] $end
+$var reg 1 # s_direcao_in $end
+$var reg 5 $ s_proximoandar_out[4:0] $end
+$var reg 1 % s_direcao_out $end
+$scope module dut $end
+$var reg 32 & botoes_in[31:0] $end
+$var reg 5 ' andaratual_in[4:0] $end
+$var reg 1 ( direcao_in $end
+$var reg 5 ) proximoandar_out[4:0] $end
+$var reg 1 * direcao_out $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+b00000000000000000000000000000000 !
+b00000 "
+1#
+b00000 $
+1%
+b00000000000000000000000000000000 &
+b00000 '
+1(
+b00000 )
+1*
+#10000000
+b00000000000100000001000000100000 !
+b01010 "
+b01100 $
+b00000000000100000001000000100000 &
+b01010 '
+b01100 )
+#20000000
+b00000000000100000000000000100000 !
+b01100 "
+b10100 $
+b00000000000100000000000000100000 &
+b01100 '
+b10100 )
+#30000000
+b00000000000000000000000000100000 !
+b11111 "
+b00101 $
+0%
+b00000000000000000000000000100000 &
+b11111 '
+b00101 )
+0*
+#40000000
+b01000000000000000000000100100100 !
+b01111 "
+0#
+b01000 $
+b01000000000000000000000100100100 &
+b01111 '
+0(
+b01000 )
+#50000000
+b01000000000000000000000000100000 !
+b00010 "
+b00101 $
+1%
+b01000000000000000000000000100000 &
+b00010 '
+b00101 )
+1*
+#60000000
+b00000000000000000000000000100000 !
+b11110 "
+1#
+0%
+b00000000000000000000000000100000 &
+b11110 '
+1(
+b00101 )
+0*
+#70000000
