@@ -1,3 +1,6 @@
+-- Arquivo: top_level.vhd
+-- (Com correções de integração aplicadas)
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -5,21 +8,20 @@ use IEEE.numeric_std.all;
 use work.Tipos_Elevadores.all;
 
 -- Top_Level: integra todos os módulos do sistema de elevadores
--- - Instancia o Supervisor_Global (nível 2)
--- - Gera 3 instâncias do conjunto: Teclado (painel interno), Controlador (FSM local),
---   Porta (FSM da porta) e Display de 7 segmentos
--- - Roteia o destino decidido pelo supervisor apenas para o elevador escolhido
-
--- Observação: este top espera que os sinais de sensor de andar (andar_sensor_in)
--- sejam providos externamente (testbench ou "plant model" que simula o movimento).
-entity Top_Level is 
+entity Top_Level is
+    -- CORREÇÃO 3 (do Testbench): Adicionado genérico para controlar o tempo da porta
+    -- na simulação. Passe um valor baixo no TB (ex: 50) e mantenha o
+    -- padrão alto para síntese.
+    generic (
+        G_DOOR_CYCLES : integer := 100_000_000
+    );
     port (
         CLK : in std_logic;
         reset : in std_logic;
 
         -- Chamadas externas (botões nos andares)
-        call_up_in : std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
-        call_down_in : std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
+        call_up_in : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
+        call_down_in : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
 
         -- Botões internos das cabines: matriz_botoes(2 DOWNTO 0) (cada vetor 0..ULTIMO_ANDAR)
         botoes_internos_in: in matriz_botoes(2 DOWNTO 0); 
@@ -66,33 +68,37 @@ architecture Estructural of Top_Level is
     end component;
     
     -- Componente: Controlador local (por elevador)
-    -- Interface: recebe andar atual (sensor) + destino (do supervisor/roteamento) e controla motor/porta
     component Controlador
         port (
-            CLK             : in  std_logic;
-            RESET           : in  std_logic;
-            andar_atual_in  : in  std_logic_vector(4 DOWNTO 0);
-            andar_destino_in: in  std_logic_vector(4 DOWNTO 0);
-            direcao_req_in  : in  std_logic;                        
-            door_closed_in  : in  std_logic;
-            door_open_in    : in  std_logic;        -- status de porta aberta
+            CLK                  : in  std_logic;
+            RESET                : in  std_logic;
+            andar_atual_in       : in  std_logic_vector(4 DOWNTO 0);
+            andar_destino_in     : in  std_logic_vector(4 DOWNTO 0);
+            direcao_req_in       : in  std_logic;            
+            door_closed_in       : in  std_logic;
+            door_open_in         : in  std_logic;            
             
-            botao_abrir_in  : in std_logic;         -- botão Abrir do teclado
-            botao_fechar_in : in std_logic;         -- botão Fechar do teclado
+            botao_abrir_in       : in std_logic;      
+            botao_fechar_in      : in std_logic;     
 
             botoes_pendentes_in  : in  std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
             botoes_pendentes_out : out std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
             
-            start_close_out : out std_logic;
-            start_open_out  : out std_logic;        -- comando para abrir
-            motor_enable_out: out std_logic;
-            move_up_out     : out std_logic;
-            move_down_out   : out std_logic
+            start_close_out      : out std_logic;
+            start_open_out       : out std_logic;      
+            motor_enable_out     : out std_logic;
+            move_up_out          : out std_logic;
+            move_down_out        : out std_logic
         );
     end component;
 
-    -- Componente: porta_elevador (FSM da porta). Tem generic CYCLES_TO_CLOSE (usar na simulação).
-    component porta_elevador
+    -- Componente: porta
+    -- CORREÇÃO 1 (BUG 1): Nome do componente corrigido de "porta_elevador" para "porta"
+    -- CORREÇÃO 1 (BUG 3): Adicionado G_MAX_COUNT ao componente
+    component porta
+        generic (
+            G_MAX_COUNT : integer
+        );
         port (
             clk         : in std_logic; 
             reset       : in std_logic; 
@@ -130,17 +136,17 @@ architecture Estructural of Top_Level is
     end component;
 
     -- Sinais usados para comunicação interna entre Supervisor/Controladores/Teclados/Portas
-    signal s_andar_destino_sup   : std_logic_vector(4 DOWNTO 0);  -- próximo andar escolhido pelo supervisor
-    signal s_elevador_escolhido  : std_logic_vector (1 DOWNTO 0);                       -- elevador escolhido pelo supervisor (0..2)
-    signal s_direcao_destino_sup : std_logic;                     -- direção associada ao destino ('1' = subir)
+    signal s_andar_destino_sup   : std_logic_vector(4 DOWNTO 0);   -- próximo andar escolhido pelo supervisor
+    signal s_elevador_escolhido  : std_logic_vector (1 DOWNTO 0);                      -- elevador escolhido pelo supervisor (0..2)
+    signal s_direcao_destino_sup : std_logic;                      -- direção associada ao destino ('1' = subir)
 
     -- Feedback do estado dos elevadores para o supervisor
-    signal s_andares_atuais  : matriz_andar(2 DOWNTO 0);          -- andares atuais lidos dos sensores
-    signal s_direcoes_atuais : std_logic_vector(2 DOWNTO 0);      -- indica movimento (1 = em movimento numa direção)
+    signal s_andares_atuais  : matriz_andar(2 DOWNTO 0);         -- andares atuais lidos dos sensores
+    signal s_direcoes_atuais : std_logic_vector(2 DOWNTO 0);     -- indica movimento (1 = em movimento numa direção)
 
     -- Vetores de pedidos internos (Teclado <-> Controlador)
-    signal s_pedidos_internos: matriz_botoes(2 DOWNTO 0); -- pedidos que o teclado passa para o supervisor
-    signal s_pedidos_limpos  : matriz_botoes(2 DOWNTO 0); -- pedidos pós-limpeza (controlador -> teclado)
+    signal s_pedidos_internos : matriz_botoes(2 DOWNTO 0); -- pedidos que o teclado passa para o supervisor
+    signal s_pedidos_limpos   : matriz_botoes(2 DOWNTO 0); -- pedidos pós-limpeza (controlador -> teclado)
     signal s_botao_abrir_teclado: std_logic_vector(2 DOWNTO 0); -- botão abrir da cabine (entrada do teclado)
     signal s_botao_fechar_teclado: std_logic_vector(2 DOWNTO 0); -- botão fechar da cabine
 
@@ -169,7 +175,7 @@ begin
             botoes_descer_in     => call_down_in,         -- pedidos externos "descer"
 
             andaresElevadores_in => s_andares_atuais,     -- feedback dos sensores (plants)
-            direcaoElevadores_in => s_direcoes_atuais,   -- feedback de direção/movimento
+            direcaoElevadores_in => s_direcoes_atuais,    -- feedback de direção/movimento
             
             proximoAndar_out     => s_andar_destino_sup,  -- destino escolhido (global)
             elevadorEscolhido    => s_elevador_escolhido, -- índice do elevador escolhido
@@ -207,8 +213,6 @@ begin
 
         ----------------------------------------------------
         -- C.1. Instanciação do Teclado (painel interno da cabine)
-        --    - andares_in: pedidos já limpos (do controlador)
-        --    - andares_out: combina pedidos antigos com novos botões pressionados
         ----------------------------------------------------
 
         Teclado_Inst: Teclado
@@ -230,47 +234,50 @@ begin
 
         ----------------------------------------------------
         -- C.2. Instanciação do Controlador Local (FSM) para o elevador i
-        --    - Recebe andar atual (sensor), destino roteado pelo Supervisor e comandos do teclado
-        --    - Produz comandos de motor e comandos de porta
         ----------------------------------------------------
         Controlador_Inst: Controlador
             port map (
-                CLK             => CLK,
-                RESET           => RESET,
+                CLK                  => CLK,
+                RESET                => RESET,
                 
                 -- Entradas de Controle/Status
-                andar_atual_in  => andar_sensor_in(i),
-                andar_destino_in=> s_andar_destino_elevador(i),    -- destino (apenas se o elevador foi escolhido)
-                direcao_req_in  => s_direcao_destino_elevador(i),  -- direção do destino
-                door_closed_in  => s_door_closed(i),
-                door_open_in    => s_door_open(i),                 -- status Porta Aberta
+                andar_atual_in       => andar_sensor_in(i),
+                andar_destino_in     => s_andar_destino_elevador(i),   -- destino (apenas se o elevador foi escolhido)
+                direcao_req_in       => s_direcao_destino_elevador(i), -- direção do destino
+                door_closed_in       => s_door_closed(i),
+                door_open_in         => s_door_open(i),              
 
                 -- Entradas do Teclado (Botões Especiais)
-                botao_abrir_in  => s_botao_abrir_teclado(i),
-                botao_fechar_in => s_botao_fechar_teclado(i),
+                botao_abrir_in       => s_botao_abrir_teclado(i),
+                botao_fechar_in      => s_botao_fechar_teclado(i),
 
                 -- Pedidos internos (Teclado <-> Controlador)
                 botoes_pendentes_in  => s_pedidos_internos(i),
-                botoes_pendentes_out => s_pedidos_limpos(i),        -- O controlador limpa o botão atendido
+                botoes_pendentes_out => s_pedidos_limpos(i),       -- O controlador limpa o botão atendido
 
                 -- Saídas de Comando (Motor e Porta)
-                start_close_out => s_start_close(i),
-                start_open_out  => s_start_open(i),                -- Comando Abrir
-                motor_enable_out=> s_motor_enable(i),
-                move_up_out     => s_move_up(i),
-                move_down_out   => s_move_down(i)
+                start_close_out      => s_start_close(i),
+                start_open_out       => s_start_open(i),             
+                motor_enable_out     => s_motor_enable(i),
+                move_up_out          => s_move_up(i),
+                move_down_out        => s_move_down(i)
             );
         
         -- Feedback de Direção para o Supervisor:
-        -- s_direcoes_atuais(i) indica se há um movimento (up ou down) em progresso
-        s_direcoes_atuais(i) <= s_move_up(i) or s_move_down(i);
+        -- CORREÇÃO 2 (BUG 2): A direção é '1' se move_up_out='1', '0' caso contrário.
+        -- O supervisor espera '1' para subir e '0' para descer/parado.
+        s_direcoes_atuais(i) <= s_move_up(i);
 
         ----------------------------------------------------
         -- C.3. Instanciação da Porta (FSM de porta por elevador)
-        --    - Recebe comandos start_close/start_open do controlador e devolve door_closed/door_open
-        --    - O tempo de fechamento/abertura é controlado por generic CYCLES_TO_CLOSE na entidade da porta
         ----------------------------------------------------
-        Porta_Inst: porta_elevador
+        
+        -- CORREÇÃO 4 (BUG 1 e 3): Nome da instância corrigido para "porta" e
+        -- "generic map" adicionado para passar o G_DOOR_CYCLES.
+        Porta_Inst: porta
+            generic map (
+                G_MAX_COUNT => G_DOOR_CYCLES
+            )
             port map (
                 clk         => CLK, 
                 reset       => RESET, 
@@ -283,7 +290,6 @@ begin
 
         ----------------------------------------------------
         -- C.4. Instanciação do Display de 7 segmentos (mostra o andar atual)
-        --    - Dois displays (dezenas e unidades) por elevador
         ----------------------------------------------------
         Display_Inst: Led_7Segmentos_Andar
             port map (
@@ -296,7 +302,6 @@ begin
     
     ----------------------------------------------------------------------
     -- D. Conexão das saídas internas para as saídas externas do Top_Level
-    --    - Simples passagem dos vetores internos para as portas do Top
     ----------------------------------------------------------------------
     motor_up_out       <= s_move_up;
     motor_down_out     <= s_move_down;
