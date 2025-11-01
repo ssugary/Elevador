@@ -15,7 +15,6 @@ architecture sim of tb_Top_Level is
     constant T_ANDAR_CYCLES  : integer := 100; -- 100 ciclos para mudar de andar
 
     -- Componente (DUT): Top_Level
-    -- (Assumindo que o genérico G_DOOR_CYCLES foi adicionado conforme a correção)
     component Top_Level
         generic (
             G_DOOR_CYCLES : integer
@@ -179,9 +178,7 @@ begin
         s_reset <= '0';
         wait for 5 * CLK_PERIOD; -- Espera FSMs estabilizarem
 
-        -- -----------------------------------------------------------------
         -- TESTE 1: Chamada interna (Elevador 0, Andar 5)
-        -- -----------------------------------------------------------------
         report "TB: TESTE 1 - Chamada interna E0 -> Andar 5";
         -- Pressiona botão 5 no elevador 0
         sim_press_button_matrix(s_botoes_internos_in, 0, 5);
@@ -201,9 +198,7 @@ begin
         report "TB: TESTE 1 - Elevador 0 chegou ao 5 e abriu. Em IDLE.";
         wait for 20 * CLK_PERIOD;
 
-        -- -----------------------------------------------------------------
         -- TESTE 2: Chamada externa (Andar 10, Subir)
-        -- -----------------------------------------------------------------
         report "TB: TESTE 2 - Chamada externa (Andar 10, Subir)";
         -- Pressiona botão SUBIR no andar 10
         sim_press_button(s_call_up_in, 10);
@@ -223,9 +218,7 @@ begin
         report "TB: TESTE 2 - Elevador 0 chegou ao 10 e atendeu chamada.";
         wait for 20 * CLK_PERIOD;
 
-        -- -----------------------------------------------------------------
         -- TESTE 3: Chamadas Múltiplas e Concorrentes
-        -- -----------------------------------------------------------------
         report "TB: TESTE 3 - Chamadas múltiplas (E1->3, E2->7, Ext->Down@15)";
         
         -- Elevador 1 (parado no 0) pede andar 3
@@ -237,7 +230,7 @@ begin
         -- Chamada externa: Andar 15, Descer
         sim_press_button(s_call_down_in, 15);
         
-        -- O Supervisor deve:
+        -- Comportamento esperado:
         -- 1. Atender pedidos internos E1 e E2 (E1->3, E2->7)
         -- 2. Atender pedido externo (Down@15). O E0 (no andar 10) é o mais próximo.
         
@@ -250,7 +243,7 @@ begin
         wait_door;
         
         report "TB: Simulação concluída.";
-        wait; -- Fim da simulação
+        wait; 
     end process Stimulus_Proc;
 
 end architecture sim;

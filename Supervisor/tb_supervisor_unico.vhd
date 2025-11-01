@@ -57,7 +57,7 @@ begin
         wait for 10 ns;
 
         -- Teste de diferentes cenários para análise:
-        -- Subindo, com chamados acima. ---
+        -- Subindo, com chamados acima. 
         report "Teste 1: Subindo, com chamados acima" severity note;
         s_andarAtual_in <= to_slv5(10);
         s_direcao_in <= '1';
@@ -68,14 +68,14 @@ begin
         -- Próximo andar precisa ser o 12
         -- Direção 1 
 
-        -- Chegou ao 12 e vai subir ---
+        -- Chegou ao 12 e vai subir 
         report "Teste 2: Chegou ao 12" severity note;
         s_andarAtual_in <= to_slv5(12);
         s_botoes_in(12) <= '0'; -- Botão 12 
         wait for 10 ns;
         -- Direção 1
 
-        -- No topo, precisa inverter e ir para o 5. ---
+        -- No topo, precisa inverter e ir para o 5. 
         report "Teste 3: Inversão de Sentido (para baixo)" severity note;
         s_andarAtual_in <= to_slv5(ULTIMO_ANDAR); -- Andar 31
         s_botoes_in(20) <= '0'; -- Botão 20 atendido (simulado)

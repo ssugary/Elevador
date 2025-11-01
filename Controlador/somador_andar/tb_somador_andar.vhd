@@ -95,9 +95,7 @@ begin
     begin
         report "TESTBENCH: Iniciando simulacao...";
         
-        -- ==========================================
         -- 1. RESET INICIAL
-        -- ==========================================
         s_reset           <= '1';
         s_motor_enable_in <= '0';
         s_move_up_in      <= '0';
@@ -115,9 +113,7 @@ begin
 
         wait for 2 * C_CLK_PERIOD;
 
-        -- ==========================================
         -- 2. TESTE DE SUBIDA (0 -> 1 -> 2)
-        -- ==========================================
         report "TESTE: Movendo para cima (0 -> 1)";
         s_motor_enable_in <= '1';
         s_move_up_in      <= '1';
@@ -138,9 +134,7 @@ begin
         assert (s_andar_atual_out = std_logic_vector(to_unsigned(2, C_N_BITS)))
             report "Falha Subida (1->2): Andar nao atualizou para 2." severity error;
             
-        -- ==========================================
         -- 3. TESTE DE PARADA
-        -- ==========================================
         report "TESTE: Parando o motor no andar 2";
         s_motor_enable_in <= '0';
         s_move_up_in      <= '0'; 
@@ -156,9 +150,7 @@ begin
          assert (s_andar_atual_out = std_logic_vector(to_unsigned(2, C_N_BITS)))
             report "Falha Parada: Andar mudou enquanto estava parado." severity error;
 
-        -- ==========================================
         -- 4. TESTE DE DESCIDA (2 -> 1 -> 0)
-        -- ==========================================
         report "TESTE: Movendo para baixo (2 -> 1)";
         s_motor_enable_in <= '1';
         s_move_up_in      <= '0';
@@ -177,9 +169,7 @@ begin
         assert (s_andar_atual_out = std_logic_vector(to_unsigned(0, C_N_BITS)))
             report "Falha Descida (1->0): Andar nao atualizou para 0." severity error;
 
-        -- ==========================================
         -- 5. TESTE DE LIMITE (Tentar ir abaixo de 0)
-        -- ==========================================
         report "TESTE: Tentando mover abaixo do andar 0";
         wait_for_floor_change; -- Espera +201 ciclos
         
@@ -187,9 +177,7 @@ begin
         assert (s_andar_atual_out = std_logic_vector(to_unsigned(0, C_N_BITS)))
             report "Falha Limite Inferior: Andar foi para valor negativo (ou wraparound)." severity error;
 
-        -- ==========================================
         -- 6. TESTE DE PARADA NO MEIO DO PERCURSO
-        -- ==========================================
         report "TESTE: Parando no meio do percurso (subindo de 0 para 1)";
         s_motor_enable_in <= '1';
         s_move_up_in      <= '1';
