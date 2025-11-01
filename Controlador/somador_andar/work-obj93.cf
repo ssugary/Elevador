@@ -1,0 +1,10 @@
+v 4
+file . "tb_somador_andar.vhd" "3c8121f26dd54b3a09c0de0cde65e806a5fc9be5" "20251101135614.631":
+  entity tb_somador_andar at 1( 0) + 0 on 21;
+  architecture behavior of tb_somador_andar at 11( 236) + 0 on 22;
+file . "../../Packages/tipos_elevadores.vhd" "52f7bc23d8ed6c629974c2ce4672655f28741964" "20251101134004.835":
+  package tipos_elevadores at 1( 0) + 0 on 11 body;
+  package body tipos_elevadores at 20( 836) + 0 on 12;
+file . "somador_andar.vhd" "31948120bd7e4d60ccd39960313e582877b8ea38" "20251101134926.017":
+  entity somador_andar at 1( 0) + 0 on 19;
+  architecture behavioral of somador_andar at 30( 1031) + 0 on 20;
