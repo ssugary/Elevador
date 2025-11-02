@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;  -- Necessário para unsigned/integer/conversion
+use work.Tipos_Elevadores.all;
 
 entity Led_7Segmentos_Andar is
     Port (
@@ -22,7 +23,7 @@ begin
 
 
     -- Atribuindo valores para os sinais e dividindo o número em dezena e unidade para trabalhar separadamente
-    valor_decimal <= to_integer(unsigned(entrada)); -- Valor_decimal = sinal que é a conversão da entrada para inteiro
+    valor_decimal <= safe_to_integer(entrada); -- Valor_decimal = sinal que é a conversão da entrada para inteiro
     digito_dezenas  <= valor_decimal / 10;          -- Valor_dezenas = sinal que é o resto da divisão do valor decimal
     digito_unidades <= valor_decimal mod 10;        -- Valor_unidades = módulo do valor decimal
     

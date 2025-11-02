@@ -29,63 +29,63 @@ end entity somador_andar;
 
 architecture behavioral of somador_andar is
 
-    constant TIME_PER_FLOOR : integer := G_TIME_PER_FLOOR;
-    signal delay_counter    : integer range 0 to TIME_PER_FLOOR;
+    constant TIME_PER_FLOOR : integer := G_TIME_PER_FLOOR;
+    signal delay_counter    : integer range 0 to TIME_PER_FLOOR := 0;
 
-    type state_t is (
-        PARADO,
-        MOVENDO
-    );
-    signal state : state_t; -- Removido valor inicial, use reset
-    
-    signal andar_reg : integer range 0 to ULTIMO_ANDAR; -- Removido valor inicial
+    type state_t is (
+        PARADO,
+        MOVENDO
+    );
+    signal state : state_t := PARADO; -- Removido valor inicial, use reset
+    
+    signal andar_reg : integer range 0 to ULTIMO_ANDAR := 0; -- Removido valor inicial
 
 begin
 
-    process(clk, reset)
-    begin
-        if reset = '1' then
-            state <= PARADO;
-            andar_reg <= 0;
-            delay_counter <= 0;
+    process(clk, reset)
+    begin
+        if reset = '1' then
+            state <= PARADO;
+            andar_reg <= 0;
+            delay_counter <= 0;
             moving_out <= '0'; -- <<-- CORREÇÃO 1: Adicionado ao Reset
-            
-        elsif rising_edge(clk) then
-            
-            case state is
+            
+        elsif rising_edge(clk) then
+            
+            case state is
 
-                when PARADO =>
-                    delay_counter <= 0;
-                    moving_out    <= '0';
-                    
-                    if motor_enable_in = '1' then
-                        state <= MOVENDO;
-                    end if;
+                when PARADO =>
+                    delay_counter <= 0;
+                    moving_out    <= '0';
+                    
+                    if motor_enable_in = '1' then
+                        state <= MOVENDO;
+                    end if;
 
-                when MOVENDO =>
-                    moving_out <= '1';
-                    
-                    if motor_enable_in = '0' then
-                        state <= PARADO;
-                    
-                    elsif delay_counter < TIME_PER_FLOOR - 1 then
-                        delay_counter <= delay_counter + 1;
-                        
-                    else
-                        delay_counter <= 0; 
-                        
-                        if move_up_in = '1' and andar_reg < ULTIMO_ANDAR then
-                            andar_reg <= andar_reg + 1;
-                        elsif move_down_in = '1' and andar_reg > 0 then
-                            andar_reg <= andar_reg - 1; -- <<-- CORREÇÃO 2: Subtrair
-                        end if;
-                    end if;
+               when MOVENDO =>
+                    moving_out <= '1';
+                    
+                    if motor_enable_in = '0' then
+                        state <= PARADO;
+                    
+                    elsif delay_counter < TIME_PER_FLOOR - 1 then
+                        delay_counter <= delay_counter + 1;
+                        
+                    else
+                        delay_counter <= 0; 
+                        
+                        if move_up_in = '1' and andar_reg < ULTIMO_ANDAR then
+                            andar_reg <= andar_reg + 1;
+                        elsif move_down_in = '1' and andar_reg > 0 then
+                            andar_reg <= andar_reg - 1; -- <<-- CORREÇÃO 2: Subtrair
+                        end if;
+                    end if;
 
-            end case;
-        end if;
-    end process;
+            end case;
+        end if;
+    end process;
 
-    -- A saída é o valor do registro interno
-    andar_atual_out <= std_logic_vector(to_unsigned(andar_reg, andar_atual_out'length));
+    -- A saída é o valor do registro interno
+    andar_atual_out <= safe_to_vector(andar_reg, andar_atual_out'length);
 
 end architecture behavioral;

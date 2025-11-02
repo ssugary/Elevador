@@ -60,23 +60,23 @@ architecture sim of tb_Top_Level is
     signal s_reset : std_logic := '0';
 
     -- Entradas do DUT
-    signal s_call_up_in         : std_logic_vector(ULTIMO_ANDAR DOWNTO 0) := (others => '0');
-    signal s_call_down_in       : std_logic_vector(ULTIMO_ANDAR DOWNTO 0) := (others => '0');
+    signal s_call_up_in         : std_logic_vector(ULTIMO_ANDAR DOWNTO 0)  := (others => '0');
+    signal s_call_down_in       : std_logic_vector(ULTIMO_ANDAR DOWNTO 0)  := (others => '0');
     signal s_botoes_internos_in : matriz_botoes(2 DOWNTO 0)                := (others => (others => '0'));
     signal s_botao_abrir_in     : std_logic_vector(2 DOWNTO 0)             := (others => '0');
     signal s_botao_fechar_in    : std_logic_vector(2 DOWNTO 0)             := (others => '0');
-    signal s_andar_sensor_in    : matriz_andar(2 DOWNTO 0); -- Vem do Plant
+    signal s_andar_sensor_in    : matriz_andar(2 DOWNTO 0)                 :=  (others =>(others => '0')); -- Vem do Plant
 
     -- Saídas do DUT (Entradas do Plant)
-    signal s_motor_up_out     : std_logic_vector(2 DOWNTO 0);
-    signal s_motor_down_out   : std_logic_vector(2 DOWNTO 0);
-    signal s_motor_enable_out : std_logic_vector(2 DOWNTO 0);
+    signal s_motor_up_out     : std_logic_vector(2 DOWNTO 0)               := (others => '0');
+    signal s_motor_down_out   : std_logic_vector(2 DOWNTO 0)               := (others => '0');
+    signal s_motor_enable_out : std_logic_vector(2 DOWNTO 0)               := (others => '0');
 
     -- Saídas (apenas para observação no simulador)
-    signal s_porta_fechando_out : std_logic_vector(2 DOWNTO 0);
-    signal s_porta_abrindo_out  : std_logic_vector(2 DOWNTO 0);
-    signal s_seg7_dezenas_out   : matriz_seg7(2 DOWNTO 0);
-    signal s_seg7_unidades_out  : matriz_seg7(2 DOWNTO 0);
+    signal s_porta_fechando_out : std_logic_vector(2 DOWNTO 0)             := (others => '0');
+    signal s_porta_abrindo_out  : std_logic_vector(2 DOWNTO 0)             := (others => '0');
+    signal s_seg7_dezenas_out   : matriz_seg7(2 DOWNTO 0)                  :=  (others =>(others => '0'));
+    signal s_seg7_unidades_out  : matriz_seg7(2 DOWNTO 0)                  := (others => (others => '0'));
 
 begin
 
@@ -151,7 +151,7 @@ begin
             signal button_matrix : inout matriz_botoes;
             constant elev_index  : in    integer;
             constant floor_index : in    integer) is
-        begin
+        begin      
             button_matrix(elev_index)(floor_index) <= '1';
             wait for CLK_PERIOD;
             button_matrix(elev_index)(floor_index) <= '0';
@@ -179,9 +179,9 @@ begin
         wait for 5 * CLK_PERIOD; -- Espera FSMs estabilizarem
 
         -- TESTE 1: Chamada interna (Elevador 0, Andar 5)
-        report "TB: TESTE 1 - Chamada interna E0 -> Andar 5";
+        report "TB: TESTE 1 - Chamada interna E1 -> Andar 5";
         -- Pressiona botão 5 no elevador 0
-        sim_press_button_matrix(s_botoes_internos_in, 0, 5);
+        sim_press_button_matrix(s_botoes_internos_in, 1, 5);
 
         -- O Controlador(0) deve detectar o pedido (via Supervisor) e ir para FECHANDO_PORTA
         report "TB: TESTE 1 - Esperando porta fechar...";
@@ -195,7 +195,7 @@ begin
         report "TB: TESTE 1 - Esperando porta abrir no andar 5...";
         wait_door;
         
-        report "TB: TESTE 1 - Elevador 0 chegou ao 5 e abriu. Em IDLE.";
+        report "TB: TESTE 1 - Elevador 1 chegou ao 5 e abriu. Em IDLE.";
         wait for 20 * CLK_PERIOD;
 
         -- TESTE 2: Chamada externa (Andar 10, Subir)
@@ -203,8 +203,8 @@ begin
         -- Pressiona botão SUBIR no andar 10
         sim_press_button(s_call_up_in, 10);
         
-        -- O Supervisor Global deve alocar o elevador mais próximo (E0, que está no 5)
-        report "TB: TESTE 2 - Esperando porta fechar (E0)...";
+        -- O Supervisor Global deve alocar o elevador mais próximo (E1, que está no 5)
+        report "TB: TESTE 2 - Esperando porta fechar (E1)...";
         wait_door;
         
         -- O Controlador(0) deve ir para MOVER (5 -> 10)
@@ -215,7 +215,7 @@ begin
         report "TB: TESTE 2 - Esperando porta abrir no andar 10...";
         wait_door;
 
-        report "TB: TESTE 2 - Elevador 0 chegou ao 10 e atendeu chamada.";
+        report "TB: TESTE 2 - Elevador 1 chegou ao 10 e atendeu chamada.";
         wait for 20 * CLK_PERIOD;
 
         -- TESTE 3: Chamadas Múltiplas e Concorrentes

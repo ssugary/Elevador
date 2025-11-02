@@ -107,6 +107,7 @@ begin
         
         -- Verificação Pós-Reset
         assert (s_andar_atual_out = std_logic_vector(to_unsigned(0, C_N_BITS)))
+
             report "Falha Pós-Reset: Andar nao e 0." severity error;
         assert (s_moving_out = '0')
             report "Falha Pós-Reset: moving_out nao e '0'." severity error;

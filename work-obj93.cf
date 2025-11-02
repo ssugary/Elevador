@@ -1,34 +1,34 @@
 v 4
-file . "./Supervisor/supervisor_global.vhd" "da8b3ae86fe63142c42f3e57e5eb8ff8a6fd4304" "20251101201513.060":
-  entity supervisor_global at 1( 0) + 0 on 83;
-  architecture behavioral of supervisor_global at 28( 1231) + 0 on 84;
-file . "./Controlador/controlador/controlador.vhd" "f2db3f34e88c085a025831604d63cb52ee09ce6f" "20251101201512.952":
-  entity controlador at 1( 0) + 0 on 79;
-  architecture behavioral of controlador at 38( 1829) + 0 on 80;
-file . "./Controlador/porta/porta.vhd" "25c3092c8094dd95dd674ce85d93690b7c4f5f3e" "20251101201512.875":
-  entity porta at 1( 0) + 0 on 75;
-  architecture fsm_com_timer of porta at 24( 501) + 0 on 76;
-file . "./Controlador/display_andar/display_andar.vhd" "9f2b089d3087f54f65d7e296693879a86543acdc" "20251101201512.789":
-  entity led_7segmentos_andar at 1( 0) + 0 on 71;
-  architecture behavioral of led_7segmentos_andar at 14( 693) + 0 on 72;
+file . "./tb_top_level.vhd" "7537e2d86e922a97fede72bd2d7bd8fd1b0f8dc6" "20251102010916.884":
+  entity tb_top_level at 1( 0) + 0 on 161;
+  architecture sim of tb_top_level at 9( 150) + 0 on 162;
+file . "./Controlador/somador_andar/somador_andar.vhd" "cf91d257b08dbca6f840be570ebb0c674f2c7d1a" "20251102010916.627":
+  entity somador_andar at 1( 0) + 0 on 151;
+  architecture behavioral of somador_andar at 30( 1031) + 0 on 152;
+file . "./Controlador/keyboard/keyboard.vhd" "15680d4808b865465c66c09530ed38c3f0ed72e3" "20251102010916.554":
+  entity teclado at 1( 0) + 0 on 147;
+  architecture estructural of teclado at 22( 1246) + 4 on 148;
+file . "./Supervisor/supervisor_unico.vhd" "90f3c69eda2814b9cbf907532b9d6ee971b91ebb" "20251102010916.716":
+  entity supervisor_unico at 1( 0) + 0 on 155;
+  architecture behavioral of supervisor_unico at 19( 921) + 0 on 156;
+file . "./Packages/tipos_elevadores.vhd" "137985b5b933a4a78a003cc4e125df3e5e596807" "20251102010916.459":
+  package tipos_elevadores at 1( 0) + 0 on 143 body;
+  package body tipos_elevadores at 22( 995) + 0 on 144;
 file . "./Supervisor/tb_supervisor_unico.vhd" "daaec27939bfd68d91597841ccf10120fd32819f" "20251101164850.805":
   entity tb_supervisor_unico at 1( 0) + 0 on 15;
   architecture teste of tb_supervisor_unico at 9( 173) + 0 on 16;
-file . "./Packages/tipos_elevadores.vhd" "52f7bc23d8ed6c629974c2ce4672655f28741964" "20251101201512.739":
-  package tipos_elevadores at 1( 0) + 0 on 69 body;
-  package body tipos_elevadores at 20( 836) + 0 on 70;
-file . "./Supervisor/supervisor_unico.vhd" "bfcce813a4e8c862ce17c0658384960dc724124b" "20251101201513.015":
-  entity supervisor_unico at 1( 0) + 0 on 81;
-  architecture behavioral of supervisor_unico at 19( 921) + 0 on 82;
-file . "./Controlador/keyboard/keyboard.vhd" "15680d4808b865465c66c09530ed38c3f0ed72e3" "20251101201512.841":
-  entity teclado at 1( 0) + 0 on 73;
-  architecture estructural of teclado at 22( 1246) + 4 on 74;
-file . "./Controlador/somador_andar/somador_andar.vhd" "31948120bd7e4d60ccd39960313e582877b8ea38" "20251101201512.913":
-  entity somador_andar at 1( 0) + 0 on 77;
-  architecture behavioral of somador_andar at 30( 1031) + 0 on 78;
-file . "./tb_top_level.vhd" "2ecfb5c54cd3691c2c69f5c3a9df4d9ca4d4595c" "20251101201513.211":
-  entity tb_top_level at 1( 0) + 0 on 87;
-  architecture sim of tb_top_level at 9( 150) + 0 on 88;
-file . "./top_level.vhd" "a920893c49f23a9dcda8f5858585c1ebc7238cef" "20251101201513.125":
-  entity top_level at 4( 70) + 0 on 85;
-  architecture estructural of top_level at 52( 2124) + 0 on 86;
+file . "./Controlador/display_andar/display_andar.vhd" "26ef5618b147aeb83d0b9976c524ba5ac3089c3d" "20251102010916.508":
+  entity led_7segmentos_andar at 1( 0) + 0 on 145;
+  architecture behavioral of led_7segmentos_andar at 15( 724) + 0 on 146;
+file . "./Controlador/porta/porta.vhd" "25c3092c8094dd95dd674ce85d93690b7c4f5f3e" "20251102010916.581":
+  entity porta at 1( 0) + 0 on 149;
+  architecture fsm_com_timer of porta at 24( 501) + 0 on 150;
+file . "./Controlador/controlador/controlador.vhd" "b18e9ac95f9767862beb217f78b0a9f101e2fe87" "20251102010916.670":
+  entity controlador at 1( 0) + 0 on 153;
+  architecture behavioral of controlador at 38( 1829) + 0 on 154;
+file . "./Supervisor/supervisor_global.vhd" "d14a866fd9c816d3f1bbea1bb95ecffd33f59bd2" "20251102010916.746":
+  entity supervisor_global at 1( 0) + 0 on 157;
+  architecture behavioral of supervisor_global at 28( 1247) + 0 on 158;
+file . "./top_level.vhd" "a04d1321acb9d5b51c4b802f97d35b8111b41f85" "20251102010916.800":
+  entity top_level at 1( 0) + 0 on 159;
+  architecture estructural of top_level at 46( 1883) + 0 on 160;

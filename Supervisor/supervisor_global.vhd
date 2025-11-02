@@ -82,9 +82,9 @@ begin
         variable distancias     : vector_integer(0 TO 2); -- dist�ncia calculada por elevador
         variable escolhido      : integer := -1;           -- �ndice do elevador escolhido
         variable botao_alvo     : integer := -1;           -- andar alvo externo (se houver)
-        variable direcao_alvo   : std_logic;               -- dire��o associada ao botao_alvo
-        variable tmp_dist       : integer;                 -- dist�ncia tempor�ria para compara��o
-        variable andar_atual    : integer;                 -- convers�o do andar atual para inteiro
+        variable direcao_alvo   : std_logic := '0';               -- dire��o associada ao botao_alvo
+        variable tmp_dist       : integer := 0;                 -- dist�ncia tempor�ria para compara��o
+        variable andar_atual    : integer := 0;                 -- convers�o do andar atual para inteiro
     begin
         -- Defaults iniciais (garante sa�das v�lidas se nada for encontrado)
         elevadorEscolhido <= (others => '1');
@@ -106,10 +106,10 @@ begin
             -- Escolhe o elevador cujo pr�ximo andar sugerido (proximo_andar_interno) esteja mais pr�ximo do seu andar atual.
             -- Inicializa escolhido com o elevador 0 como refer�ncia
             escolhido := 0;
-            tmp_dist := modulo_int(to_integer(unsigned(proximo_andar_interno(0))) - to_integer(unsigned(andaresElevadores_in(0))));
+            tmp_dist := modulo_int(safe_to_integer(proximo_andar_interno(0)) - safe_to_integer(andaresElevadores_in(0)));
             -- percorre os outros elevadores (1..2) e escolhe o menor "dist"
             for i in 1 to 2 loop
-                distancias(i) := modulo_int(to_integer(unsigned(proximo_andar_interno(i))) - to_integer(unsigned(andaresElevadores_in(i))));
+                distancias(i) := modulo_int(safe_to_integer(proximo_andar_interno(i)) - safe_to_integer(andaresElevadores_in(i)));
                 if distancias(i) < tmp_dist then
                     tmp_dist := distancias(i);
                     escolhido := i;
@@ -118,7 +118,7 @@ begin
 
             -- Define as sa�das com base no escolhido
             if escolhido >= 0 and escolhido <= 2 then
-                elevadorEscolhido <= std_logic_vector(to_unsigned(escolhido, elevadorEscolhido'length));
+                elevadorEscolhido <= safe_to_vector(escolhido, elevadorEscolhido'length);
                 proximoAndar_out <= proximo_andar_interno(escolhido);
                 direcao_out <= direcao_interna(escolhido);
             else
@@ -133,7 +133,7 @@ begin
 
             -- Primeiro passe: considerar apenas elevadores que j� estejam na mesma dire��o (ou que j� estejam no andar alvo)
             for i in 0 TO 2 loop
-                andar_atual := to_integer(unsigned(andaresElevadores_in(i)));
+                andar_atual := safe_to_integer(andaresElevadores_in(i));
                 -- Se elevador j� est� indo na dire��o desejada OU j� est� no andar do pedido, considerar como candidato
                 if (direcaoElevadores_in(i) = direcao_alvo) or (andar_atual = botao_alvo) then
                     distancias(i) := modulo_int(botao_alvo - andar_atual);
@@ -148,7 +148,7 @@ begin
             if escolhido = -1 then
                 tmp_dist := ULTIMO_ANDAR * 2;
                 for i in 0 TO 2 loop
-                    distancias(i) := modulo_int(botao_alvo - to_integer(unsigned(andaresElevadores_in(i))));
+                    distancias(i) := modulo_int(botao_alvo - safe_to_integer(andaresElevadores_in(i)));
                     if distancias(i) < tmp_dist then
                         tmp_dist := distancias(i);
                         escolhido := i;
@@ -158,8 +158,9 @@ begin
             
             -- Atualiza sa�das com a escolha feita
             if escolhido >= 0 and escolhido <= 2 then
-                elevadorEscolhido <= std_logic_vector(to_unsigned(escolhido, elevadorEscolhido'length));
-                proximoAndar_out <= std_logic_vector(to_unsigned(botao_alvo, proximoAndar_out'length));
+                elevadorEscolhido <=  safe_to_vector(escolhido, elevadorEscolhido'length);
+                proximoAndar_out <= safe_to_vector(botao_alvo, proximoAndar_out'length);
+
                 direcao_out <= direcao_alvo;
             else
                 elevadorEscolhido <= (others => '1');

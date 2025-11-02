@@ -29,7 +29,7 @@ begin
         constant VETOR_ZERO : std_logic_vector(ULTIMO_ANDAR DOWNTO 0) := (others => '0');
     begin
         -- Converte a posição atual para inteiro (0..ULTIMO_ANDAR)
-        ANDAR_ATUAL := to_integer(unsigned(andarAtual_in));
+        ANDAR_ATUAL := safe_to_integer(andarAtual_in);
         ANDAR_ENCONTRADO := false;
 
         -- Defaults: evita criação de latches e garante valores caso nenhuma condição seja atendida.
@@ -67,7 +67,7 @@ begin
             -- Se encontrou um andar válido (retorno diferente de -1), atualiza a saída proximoAndar_out.
             -- Converte o inteiro para std_logic_vector com a largura apropriada (5 bits).
             if ANDAR_PROXIMO /= -1 then
-                proximoAndar_out <= std_logic_vector(to_unsigned(ANDAR_PROXIMO, proximoAndar_out'length));
+                proximoAndar_out <= safe_to_vector(ANDAR_PROXIMO, proximoAndar_out'length);
             end if;
         end if;
     end process;

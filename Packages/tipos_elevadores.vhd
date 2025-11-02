@@ -15,6 +15,8 @@ package Tipos_Elevadores is
     function achar_abaixo(botoes: std_logic_vector; atual: integer)return integer;
     function modulo_int(x : integer) return integer;
     function is_all_zero(vec: std_logic_vector) return boolean;
+    function safe_to_vector(val     : integer;width   : natural) return std_logic_vector;
+    function safe_to_integer(vec : std_logic_vector) return integer;
 end package;
 
 package body Tipos_Elevadores is
@@ -64,5 +66,39 @@ begin
     end loop;
     return true;
 end function;
+
+function safe_to_vector(
+    val     : integer;
+    width   : natural
+) return std_logic_vector is
+    variable result : std_logic_vector(width-1 downto 0) := (others => '0');
+begin
+    -- Se o valor for fora do range ou indefinido (como 'U'), retorna 0
+    if (val < 0) then
+        result := (others => '0');
+    else
+        result := std_logic_vector(to_unsigned(val, width));
+    end if;
+    return result;
+end function;
+
+function safe_to_integer(vec : std_logic_vector) return integer is
+    variable result : integer := 0;
+    variable clean  : boolean := true;
+begin
+    for j in vec'range loop
+        if vec(j) /= '0' and vec(j) /= '1' then
+            clean := false;
+        end if;
+    end loop;
+    if clean then
+        result := to_integer(unsigned(vec));
+    else
+        result := 0;
+    end if;
+    return result;
+end function;
+
+
 
 end package body Tipos_Elevadores;

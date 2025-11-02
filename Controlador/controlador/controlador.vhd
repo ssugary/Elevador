@@ -38,12 +38,12 @@ end Controlador;
 architecture Behavioral of Controlador is
 
     -- Estado atual e próximo estado da FSM (definidos em Tipos_Elevadores)
-    signal estado_atual, proximo_estado : t_estado;
+    signal estado_atual, proximo_estado : t_estado := IDLE;
     
     -- Registro do vetor de botões pendentes (botoes_reg) e próximo valor (botoes_next)
     -- Padrão "reg/next" evita múltiplos drivers e é adequado para síntese.
-    signal botoes_reg  : std_logic_vector(ULTIMO_ANDAR downto 0);
-    signal botoes_next : std_logic_vector(ULTIMO_ANDAR downto 0);
+    signal botoes_reg  : std_logic_vector(ULTIMO_ANDAR downto 0) := (others => '0');
+    signal botoes_next : std_logic_vector(ULTIMO_ANDAR downto 0) := (others => '0');
     
 begin
 
@@ -72,10 +72,10 @@ begin
              door_closed_in, door_open_in, botoes_pendentes_in, botoes_reg,
              botao_abrir_in, botao_fechar_in) is
         -- Variáveis auxiliares para comparações inteiras
-        variable atual_int    : integer;
-        variable destino_int  : integer;
+        variable atual_int    : integer := 0;
+        variable destino_int  : integer := 0;
         -- var_botoes é usado para modificar localmente o vetor de pedidos antes de gravá-lo em botoes_next
-        variable var_botoes   : std_logic_vector(ULTIMO_ANDAR downto 0);
+        variable var_botoes   : std_logic_vector(ULTIMO_ANDAR downto 0) := (others => '0');
     begin
         -- Valores default para evitar latches e garantir comportamento determinístico
         proximo_estado   <= estado_atual;  -- por padrão permanece no mesmo estado
@@ -86,8 +86,8 @@ begin
         start_open_out   <= '0';           -- não iniciar abertura por padrão
 
         -- Converte vetores binários para inteiros para facilitar comparações
-        atual_int   := to_integer(unsigned(andar_atual_in));
-        destino_int := to_integer(unsigned(andar_destino_in));
+        atual_int   := safe_to_integer(andar_atual_in);
+        destino_int := safe_to_integer(andar_destino_in);
 
         -- Inicializa var_botoes com os pedidos vindos do teclado (novos pedidos entram)
         var_botoes := botoes_pendentes_in;

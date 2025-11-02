@@ -128,34 +128,34 @@ architecture Estructural of Top_Level is
     end component;
 
     -- Sinais usados para comunica��o interna entre Supervisor/Controladores/Teclados/Portas
-    signal s_andar_destino_sup   : std_logic_vector(4 DOWNTO 0);   -- pr�ximo andar escolhido pelo supervisor
-    signal s_elevador_escolhido  : std_logic_vector (1 DOWNTO 0);                      -- elevador escolhido pelo supervisor (0..2)
-    signal s_direcao_destino_sup : std_logic;                      -- dire��o associada ao destino ('1' = subir)
+    signal s_andar_destino_sup   : std_logic_vector(4 DOWNTO 0) := (others => '0');   -- pr�ximo andar escolhido pelo supervisor
+    signal s_elevador_escolhido  : std_logic_vector (1 DOWNTO 0) := (others => '0');                      -- elevador escolhido pelo supervisor (0..2)
+    signal s_direcao_destino_sup : std_logic := '0';                      -- dire��o associada ao destino ('1' = subir)
 
     -- Feedback do estado dos elevadores para o supervisor
-    signal s_andares_atuais  : matriz_andar(2 DOWNTO 0);         -- andares atuais lidos dos sensores
-    signal s_direcoes_atuais : std_logic_vector(2 DOWNTO 0);     -- indica movimento (1 = em movimento numa dire��o)
+    signal s_andares_atuais  : matriz_andar(2 DOWNTO 0) := (others => (others =>'0'));         -- andares atuais lidos dos sensores
+    signal s_direcoes_atuais : std_logic_vector(2 DOWNTO 0) := (others => '0');     -- indica movimento (1 = em movimento numa dire��o)
 
     -- Vetores de pedidos internos (Teclado <-> Controlador)
-    signal s_pedidos_internos : matriz_botoes(2 DOWNTO 0); -- pedidos que o teclado passa para o supervisor
-    signal s_pedidos_limpos   : matriz_botoes(2 DOWNTO 0); -- pedidos p�s-limpeza (controlador -> teclado)
-    signal s_botao_abrir_teclado: std_logic_vector(2 DOWNTO 0); -- bot�o abrir da cabine (entrada do teclado)
-    signal s_botao_fechar_teclado: std_logic_vector(2 DOWNTO 0); -- bot�o fechar da cabine
+    signal s_pedidos_internos : matriz_botoes(2 DOWNTO 0) := (others => (others =>'0')); -- pedidos que o teclado passa para o supervisor
+    signal s_pedidos_limpos   : matriz_botoes(2 DOWNTO 0) := (others => (others =>'0')); -- pedidos p�s-limpeza (controlador -> teclado)
+    signal s_botao_abrir_teclado: std_logic_vector(2 DOWNTO 0) := (others => '0');  -- bot�o abrir da cabine (entrada do teclado)
+    signal s_botao_fechar_teclado: std_logic_vector(2 DOWNTO 0) := (others => '0'); -- bot�o fechar da cabine
 
     -- Sinais de comando do controlador para "hardware"
-    signal s_motor_enable: std_logic_vector(2 DOWNTO 0);
-    signal s_move_up     : std_logic_vector(2 DOWNTO 0);
-    signal s_move_down   : std_logic_vector(2 DOWNTO 0);
+    signal s_motor_enable: std_logic_vector(2 DOWNTO 0) := (others => '0');
+    signal s_move_up     : std_logic_vector(2 DOWNTO 0) := (others => '0');
+    signal s_move_down   : std_logic_vector(2 DOWNTO 0) := (others => '0');
 
     -- Sinais entre controlador e porta
-    signal s_start_close : std_logic_vector(2 DOWNTO 0);
-    signal s_start_open  : std_logic_vector(2 DOWNTO 0);
-    signal s_door_closed : std_logic_vector(2 DOWNTO 0);
-    signal s_door_open   : std_logic_vector(2 DOWNTO 0);
+    signal s_start_close : std_logic_vector(2 DOWNTO 0) := (others => '0');
+    signal s_start_open  : std_logic_vector(2 DOWNTO 0) := (others => '0');
+    signal s_door_closed : std_logic_vector(2 DOWNTO 0) := (others => '0');
+    signal s_door_open   : std_logic_vector(2 DOWNTO 0) := (others => '0');
     
     -- Sinais de roteamento (cada elevador tem seu destino final; por padr�o � o pr�prio andar)
-    signal s_andar_destino_elevador  : matriz_andar(2 DOWNTO 0);
-    signal s_direcao_destino_elevador: std_logic_vector(2 DOWNTO 0);
+    signal s_andar_destino_elevador  : matriz_andar(2 DOWNTO 0) := (others => (others =>'0'));
+    signal s_direcao_destino_elevador: std_logic_vector(2 DOWNTO 0) := (others => '0');
 
 begin
 
@@ -177,7 +177,7 @@ begin
     -- Roteamento: aplica o proximoAndar_out APENAS ao elevador escolhido
     Roteamento_Supervisor_Proc: 
     process (s_elevador_escolhido, s_andar_destino_sup, s_direcao_destino_sup, andar_sensor_in)
-        variable chosen_int : integer;
+        variable chosen_int : integer := 0;
     begin
         -- Default: para todos os elevadores, o destino � o pr�prio andar atual (n�o for�ar movimenta��o)
         for i in 0 to 2 loop
@@ -186,7 +186,7 @@ begin
         end loop;
         
         -- Se o supervisor escolheu um elevador v�lido (0..2), roteia o destino e a dire��o apenas para ele
-        chosen_int := to_integer(unsigned(s_elevador_escolhido));
+        chosen_int := safe_to_integer(s_elevador_escolhido);
         if chosen_int >= 0 and chosen_int <= 2 then
             s_andar_destino_elevador(chosen_int) <= s_andar_destino_sup;
             s_direcao_destino_elevador(chosen_int) <= s_direcao_destino_sup;
