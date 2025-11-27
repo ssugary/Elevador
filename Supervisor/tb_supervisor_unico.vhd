@@ -11,18 +11,18 @@ architecture Teste of tb_Supervisor_Unico is
     
     component Supervisor_Unico -- Declaração do componente de teste
         port (
-            botoes_in      : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
-            andarAtual_in  : in std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0);
-            direcao_in     : in std_logic;
+            botoes_in        : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
+            andarAtual_in    : in std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0);
+            direcao_in       : in std_logic;
             proximoAndar_out : out std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0);
             direcao_out      : out std_logic
         );
     end component Supervisor_Unico;
 
     -- Delcarando sinais DUT / Entradas e saídas
-    signal s_botoes_in      : std_logic_vector(ULTIMO_ANDAR DOWNTO 0) := (others => '0');
-    signal s_andarAtual_in  : std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0) := (others => '0');
-    signal s_direcao_in     : std_logic := '0';
+    signal s_botoes_in        : std_logic_vector(ULTIMO_ANDAR DOWNTO 0)      := (others => '0');
+    signal s_andarAtual_in    : std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0) := (others => '0');
+    signal s_direcao_in       : std_logic := '0';
     signal s_proximoAndar_out : std_logic_vector(ADDRESS_WIDTH - 1 DOWNTO 0);
     signal s_direcao_out      : std_logic;
 
@@ -38,9 +38,9 @@ begin
     -- Instancianciando DUT / Entradas e saídas
     DUT : Supervisor_Unico
         port map (
-            botoes_in      => s_botoes_in,
-            andarAtual_in  => s_andarAtual_in,
-            direcao_in     => s_direcao_in,
+            botoes_in        => s_botoes_in,
+            andarAtual_in    => s_andarAtual_in,
+            direcao_in       => s_direcao_in,
             proximoAndar_out => s_proximoAndar_out,
             direcao_out      => s_direcao_out
         );
@@ -110,6 +110,13 @@ begin
         s_botoes_in(30) <= '0';
         s_direcao_in <= '1'; -- Direção atual = cima
         wait for 10 ns;
+
+        report "Teste 7: Chamada em dire��o oposta sem prioridade" severity note;
+        s_andarAtual_in <= to_slv5(20);
+        s_botoes_in(21) <= '1';
+        s_botoes_in(18) <= '1';
+        s_direcao_in <= '0';
+        
 
         report "Testbench Finalizado." severity note;
         wait; 
