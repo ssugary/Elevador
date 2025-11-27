@@ -10,6 +10,8 @@ package Tipos_Elevadores is
     type matriz_botoes is array (integer range <>) of STD_LOGIC_VECTOR(31 DOWNTO 0);
     type vector_integer is array (integer range <>) of integer;
     type t_estado is (IDLE, FECHANDO_PORTA, MOVER, CHEGOU_ANDAR, ABRINDO_PORTA);
+    type t_direcao is (PARADO, SUBINDO, DESCENDO);
+    type vetor_direcao is array (integer range <>) of t_direcao;
     constant ULTIMO_ANDAR : integer := 31;
     function achar_acima(botoes: std_logic_vector; atual: integer) return integer;
     function achar_abaixo(botoes: std_logic_vector; atual: integer)return integer;
