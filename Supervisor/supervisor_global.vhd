@@ -1,169 +1,139 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
-
-use work.Tipos_Elevadores.all; 
+use work.Tipos_Elevadores.all;
 
 entity Supervisor_Global is
     port (
-        -- Pedidos intern os por elevador: vetor de vetores (cada elemento ï¿½ std_logic_vector[0..ULTIMO_ANDAR])
+        -- Entradas de Dados
         botoes_in            : in matriz_botoes(2 DOWNTO 0);
-
-        -- Pedidos externos: botï¿½es de subir e descer por andar (0..ULTIMO_ANDAR)
         botoes_subir_in      : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
         botoes_descer_in     : in std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
-
-        -- Feedback dos elevadores: andar atual e direï¿½ï¿½o atual (para cada elevador)
+        
         andaresElevadores_in : in matriz_andar(2 DOWNTO 0);
-        direcaoElevadores_in : in std_logic_vector(2 DOWNTO 0);
+        
+        -- MUDANÇA: Recebe vetor de tipos t_direcao
+        direcaoElevadores_in : in vetor_direcao(2 DOWNTO 0); 
 
-        -- Saï¿½das do escalonador:
-        proximoAndar_out     : out std_logic_vector(4 DOWNTO 0); -- o andar que o Supervisor decidiu para]
-                                                                 -- o elevador escolhido (5 bits)
-        elevadorEscolhido    : out std_logic_vector(1 DOWNTO 0);  -- ï¿½ndice do elevador escolhido (integer 0..2)
-        direcao_out          : out std_logic -- direï¿½ï¿½o associada ao pedido (1 = subir, 0 = descer)
+        -- Saídas
+        proximoAndar_out     : out matriz_andar(2 DOWNTO 0);
+        
+        -- MUDANÇA: Envia vetor de tipos t_direcao
+        direcao_req_out      : out vetor_direcao(2 DOWNTO 0)
     );
 end entity;
 
 architecture Behavioral of Supervisor_Global is 
 
-    -- Instancia local do Supervisor_Unico por elevador:
-    -- Cada Supervisor_Unico determina, a partir dos pedidos internos daquele elevador,
-    -- qual ï¿½ o prï¿½ximo andar que esse elevador deveria atender (sem considerar pedidos externos).
     component Supervisor_Unico 
         port(
             botoes_in        : in  std_logic_vector(ULTIMO_ANDAR DOWNTO 0);
             andarAtual_in    : in  std_logic_vector(4 DOWNTO 0);
-            direcao_in       : in  std_logic;
-
+            direcao_in       : in  t_direcao;
             proximoAndar_out : out std_logic_vector(4 DOWNTO 0);
-            direcao_out      : out std_logic
+            direcao_out      : out t_direcao
         );
     end component;
 
-    -- Sinais internos para coletar as decisï¿½es locais dos 3 Supervisores_Unico
-    signal proximo_andar_interno : matriz_andar(2 DOWNTO 0);  -- prï¿½ximo andar sugerido por cada supervisor local
-    signal direcao_interna       : std_logic_vector(2 DOWNTO 0); -- direï¿½ï¿½o sugerida por cada supervisor local
+    signal sugestao_andar_local : matriz_andar(2 DOWNTO 0);
+    signal sugestao_dir_local   : vetor_direcao(2 DOWNTO 0);
 
 begin
 
-    -- Instanciaï¿½ï¿½o do supervisor local para cada elevador (0,1,2)
-    sup0: Supervisor_Unico
-        port map (
-            botoes_in        => botoes_in(0),
-            andarAtual_in    => andaresElevadores_in(0),
-            direcao_in       => direcaoElevadores_in(0),
-            proximoAndar_out => proximo_andar_interno(0),
-            direcao_out      => direcao_interna(0)
-        );
+    -- Instanciação (Ajuste automático pelos tipos definidos no pacote)
+    sup0: Supervisor_Unico port map (
+        botoes_in => botoes_in(0), andarAtual_in => andaresElevadores_in(0), direcao_in => direcaoElevadores_in(0),
+        proximoAndar_out => sugestao_andar_local(0), direcao_out => sugestao_dir_local(0));
 
-    sup1: Supervisor_Unico
-        port map (
-            botoes_in        => botoes_in(1),
-            andarAtual_in    => andaresElevadores_in(1),
-            direcao_in       => direcaoElevadores_in(1),
-            proximoAndar_out => proximo_andar_interno(1),
-            direcao_out      => direcao_interna(1)
-        );
+    sup1: Supervisor_Unico port map (
+        botoes_in => botoes_in(1), andarAtual_in => andaresElevadores_in(1), direcao_in => direcaoElevadores_in(1),
+        proximoAndar_out => sugestao_andar_local(1), direcao_out => sugestao_dir_local(1));
 
-    sup2: Supervisor_Unico
-        port map (
-            botoes_in        => botoes_in(2),
-            andarAtual_in    => andaresElevadores_in(2),
-            direcao_in       => direcaoElevadores_in(2),
-            proximoAndar_out => proximo_andar_interno(2),
-            direcao_out      => direcao_interna(2)
-        );
+    sup2: Supervisor_Unico port map (
+        botoes_in => botoes_in(2), andarAtual_in => andaresElevadores_in(2), direcao_in => direcaoElevadores_in(2),
+        proximoAndar_out => sugestao_andar_local(2), direcao_out => sugestao_dir_local(2));
 
-    -- Processo combinacional principal do Supervisor_Global.
-    -- Faz a escolha do botï¿½o alvo (externo) e decide qual elevador atende.
-    process(andaresElevadores_in, direcaoElevadores_in, proximo_andar_interno, botoes_subir_in, botoes_descer_in)
-        -- Variï¿½veis locais para cï¿½lculos (evitam latches e facilitam comparaï¿½ï¿½es)
-        variable distancias     : vector_integer(0 TO 2); -- distï¿½ncia calculada por elevador
-        variable escolhido      : integer := -1;           -- ï¿½ndice do elevador escolhido
-        variable botao_alvo     : integer := -1;           -- andar alvo externo (se houver)
-        variable direcao_alvo   : std_logic := '0';               -- direï¿½ï¿½o associada ao botao_alvo
-        variable tmp_dist       : integer := 0;                 -- distï¿½ncia temporï¿½ria para comparaï¿½ï¿½o
-        variable andar_atual    : integer := 0;                 -- conversï¿½o do andar atual para inteiro
+
+    -- LÓGICA CENTRAL
+    process(botoes_subir_in, botoes_descer_in, andaresElevadores_in, direcaoElevadores_in, sugestao_andar_local, sugestao_dir_local)
+        
+        variable andar_chamada_ext : integer;
+        variable dir_chamada_ext   : t_direcao; -- Agora é do tipo t_direcao
+        variable custo_atual, menor_custo, vencedor : integer;
+        variable dist_simples, andar_elev_int : integer;
+        
+        constant PENALIDADE : integer := 50; 
+
     begin
-        -- Defaults iniciais (garante saï¿½das vï¿½lidas se nada for encontrado)
-        elevadorEscolhido <= (others => '1');
-        proximoAndar_out <= andaresElevadores_in(0);
-        direcao_out <= direcaoElevadores_in(0);
+        -- 1. Default: Segue o supervisor local
+        proximoAndar_out <= sugestao_andar_local;
+        direcao_req_out  <= sugestao_dir_local;
+        
+        vencedor := -1;
+        andar_chamada_ext := -1;
+        dir_chamada_ext := PARADO;
 
-        -- 1) Identificar pedido externo (prioridade para botï¿½es "subir")
-        -- achar_acima(botoes_subir_in, 0) retorna o menor andar > 0 que tenha botï¿½o subir
-        botao_alvo := achar_acima(botoes_subir_in, 0);
-        direcao_alvo := '1'; -- direï¿½ï¿½o target = subir
-        if botao_alvo = -1 then
-            -- se nï¿½o encontrou "subir", procura um botï¿½o "descer" (comeï¿½ando do topo)
-            botao_alvo := achar_abaixo(botoes_descer_in, ULTIMO_ANDAR);
-            direcao_alvo := '0'; -- direï¿½ï¿½o target = descer
+        -- 2. Varredura de Chamadas (Prioridade Subir)
+        andar_chamada_ext := achar_acima(botoes_subir_in, -1);
+        if andar_chamada_ext /= -1 then
+            dir_chamada_ext := SUBINDO;
+        else
+            andar_chamada_ext := achar_abaixo(botoes_descer_in, ULTIMO_ANDAR + 1);
+            if andar_chamada_ext /= -1 then
+                dir_chamada_ext := DESCENDO;
+            end if;
         end if;
 
-        -- 2) Se nï¿½o hï¿½ botï¿½es externos, usa pedidos internos (decisï¿½o local dos Supervisores_Unico)
-        if botao_alvo = -1 then
-            -- Escolhe o elevador cujo prï¿½ximo andar sugerido (proximo_andar_interno) esteja mais prï¿½ximo do seu andar atual.
-            -- Inicializa escolhido com o elevador 0 como referï¿½ncia
-            escolhido := 0;
-            tmp_dist := modulo_int(safe_to_integer(proximo_andar_interno(0)) - safe_to_integer(andaresElevadores_in(0)));
-            -- percorre os outros elevadores (1..2) e escolhe o menor "dist"
-            for i in 1 to 2 loop
-                distancias(i) := modulo_int(safe_to_integer(proximo_andar_interno(i)) - safe_to_integer(andaresElevadores_in(i)));
-                if distancias(i) < tmp_dist then
-                    tmp_dist := distancias(i);
-                    escolhido := i;
-                end if;
-            end loop;
-
-            -- Define as saï¿½das com base no escolhido
-            if escolhido >= 0 and escolhido <= 2 then
-                elevadorEscolhido <= safe_to_vector(escolhido, elevadorEscolhido'length);
-                proximoAndar_out <= proximo_andar_interno(escolhido);
-                direcao_out <= direcao_interna(escolhido);
-            else
-                elevadorEscolhido <= (others => '1');
-            end if;
-        else
-            -- 3) Hï¿½ um botï¿½o externo: escolha do elevador que atenderï¿½ esse botï¿½o
-            -- Primeiro tenta encontrar elevador na mesma direï¿½ï¿½o e mais prï¿½ximo
-            -- Se nï¿½o houver nenhum na mesma direï¿½ï¿½o, escolhe o elevador mais prï¿½ximo de qualquer direï¿½ï¿½o
-            escolhido := -1;
-            tmp_dist := ULTIMO_ANDAR * 2; -- valor grande inicial para comparaï¿½ï¿½o
-
-            -- Primeiro passe: considerar apenas elevadores que jï¿½ estejam na mesma direï¿½ï¿½o (ou que jï¿½ estejam no andar alvo)
-            for i in 0 TO 2 loop
-                andar_atual := safe_to_integer(andaresElevadores_in(i));
-                -- Se elevador jï¿½ estï¿½ indo na direï¿½ï¿½o desejada OU jï¿½ estï¿½ no andar do pedido, considerar como candidato
-                if (direcaoElevadores_in(i) = direcao_alvo) or (andar_atual = botao_alvo) then
-                    distancias(i) := modulo_int(botao_alvo - andar_atual);
-                    if distancias(i) < tmp_dist then
-                        tmp_dist := distancias(i);
-                        escolhido := i; -- marca candidato mais prï¿½ximo
-                    end if;
-                end if;
-            end loop;
-
-            -- Se nï¿½o encontrou nenhum elevador na mesma direï¿½ï¿½o, escolhe o mais prï¿½ximo independentemente da direï¿½ï¿½o
-            if escolhido = -1 then
-                tmp_dist := ULTIMO_ANDAR * 2;
-                for i in 0 TO 2 loop
-                    distancias(i) := modulo_int(botao_alvo - safe_to_integer(andaresElevadores_in(i)));
-                    if distancias(i) < tmp_dist then
-                        tmp_dist := distancias(i);
-                        escolhido := i;
-                    end if;
-                end loop;
-            end if;
+        -- 3. Cálculo de Custo com t_direcao
+        if andar_chamada_ext /= -1 then
+            menor_custo := 1000;
             
-            -- Atualiza saï¿½das com a escolha feita
-            if escolhido >= 0 and escolhido <= 2 then
-                elevadorEscolhido <=  safe_to_vector(escolhido, elevadorEscolhido'length);
-                proximoAndar_out <= safe_to_vector(botao_alvo, proximoAndar_out'length);
+            for i in 0 to 2 loop
+                andar_elev_int := safe_to_integer(andaresElevadores_in(i));
+                dist_simples   := modulo_int(andar_elev_int - andar_chamada_ext);
+                custo_atual    := dist_simples;
 
-                direcao_out <= direcao_alvo;
-            else
-                elevadorEscolhido <= (others => '1');
+                -- O Grande Trunfo do t_direcao: Cases explícitos
+                case direcaoElevadores_in(i) is
+                    
+                    when PARADO =>
+                        -- Elevador livre é o melhor candidato (custo puro = distância)
+                        custo_atual := dist_simples;
+
+                    when SUBINDO =>
+                        if dir_chamada_ext = DESCENDO then
+                            custo_atual := custo_atual + PENALIDADE; -- Contramão
+                        elsif andar_elev_int > andar_chamada_ext then
+                            custo_atual := custo_atual + PENALIDADE; -- Já passou subindo
+                        end if;
+
+                    when DESCENDO =>
+                        if dir_chamada_ext = SUBINDO then
+                            custo_atual := custo_atual + PENALIDADE; -- Contramão
+                        elsif andar_elev_int < andar_chamada_ext then
+                            custo_atual := custo_atual + PENALIDADE; -- Já passou descendo
+                        end if;
+
+                end case;
+
+                if custo_atual < menor_custo then
+                    menor_custo := custo_atual;
+                    vencedor := i;
+                end if;
+            end loop;
+
+            -- 4. Aplica ao Vencedor
+            if vencedor /= -1 then
+                proximoAndar_out(vencedor) <= safe_to_vector(andar_chamada_ext, 5);
+                
+                -- Define a direção física necessária
+                if safe_to_integer(andaresElevadores_in(vencedor)) < andar_chamada_ext then
+                    direcao_req_out(vencedor) <= SUBINDO;
+                elsif safe_to_integer(andaresElevadores_in(vencedor)) > andar_chamada_ext then
+                    direcao_req_out(vencedor) <= DESCENDO;
+                else
+                    direcao_req_out(vencedor) <= PARADO; -- (Raro, mas possível)
+                end if;
             end if;
         end if;
     end process;
